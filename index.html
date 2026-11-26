@@ -24,6 +24,7 @@
 :root{color-scheme:light dark;--bg:light-dark(#f4f4f0,#121210);--card:light-dark(#fff,#1d1d1a);--ink:light-dark(rgba(0,0,0,.84),#f0f0ea);--mut:light-dark(rgba(0,0,0,.56),rgba(240,240,234,.6));--line:light-dark(rgba(34,31,14,.16),rgba(240,240,234,.16));--g:#00dc00;--gink:#0a3d0a;--warn:light-dark(#b34700,#ff9a52)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
+html.testing,html.testing body{overflow:hidden;height:100%;overscroll-behavior:none}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 YouNik,Arial,sans-serif;overflow-x:clip}
 button,input,select{font:inherit;color:inherit}
 h1,h2,h3,p{margin:0}
@@ -53,7 +54,7 @@ label{display:grid;gap:6px;font-size:14px;font-weight:500}
 .preview .pw{width:min(100%,300px)}
 
 /* test-scene */
-.stage{position:fixed;inset:0;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#e6e6e0;display:grid;place-items:center;z-index:5}
+.stage{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#e6e6e0;display:grid;place-items:center;z-index:5}
 .fwrap{position:relative}
 .fwrap>.frame{position:absolute;left:0;top:0;transform-origin:0 0}
 .stage.full{background:#fff;place-items:start}
@@ -284,7 +285,7 @@ const strip=s=>({p:s.p,o:s.o||'',st:s.st,en:s.en||0,vw:s.vw,ev:s.ev});
 
 /* ---------- views ---------- */
 let view='home';
-function show(v){view=v;$('#vHome').classList.toggle('hide',v!=='home');$('#vRes').classList.toggle('hide',v!=='res');$('#vTest').classList.toggle('hide',v!=='test');if(v==='res')renderRes();if(v==='home')homeInfo();window.scrollTo(0,0)}
+function show(v){view=v;document.documentElement.classList.toggle('testing',v==='test');$('#vHome').classList.toggle('hide',v!=='home');$('#vRes').classList.toggle('hide',v!=='res');$('#vTest').classList.toggle('hide',v!=='test');if(v==='res')renderRes();if(v==='home')homeInfo();window.scrollTo(0,0)}
 function route(){if(view==='test')return;show(location.hash==='#resultater'?'res':'home')}
 window.addEventListener('hashchange',route);
 function homeInfo(){
@@ -317,10 +318,16 @@ function startProto(){
 }
 const vh=()=>Math.round((window.visualViewport&&visualViewport.height)||innerHeight);
 const isPhone=()=>Math.min(innerWidth,screen.width||innerWidth)<600||matchMedia('(pointer:coarse) and (max-width:900px)').matches;
-function fit(){if(!fr)return;const w=$('#fwrap'),st=$('#vTest');
-  if(isPhone()){const k=innerWidth/W,fh=Math.round(vh()/k);fr.style.height=fh+'px';fr.classList.add('full');st.classList.add('full');w.style.width=innerWidth+'px';w.style.height=vh()+'px';fr.style.transform=`scale(${k})`}
-  else{const k=Math.min(innerWidth/W,vh()/H,1.3);fr.style.height=H+'px';fr.classList.remove('full');st.classList.remove('full');w.style.width=W*k+'px';w.style.height=H*k+'px';fr.style.transform=`scale(${k})`}}
-if(window.visualViewport)visualViewport.addEventListener('resize',fit);
+function fit(){if(!fr)return;const w=$('#fwrap'),st=$('#vTest'),sc=fr.querySelector('.scroll');
+  const atEnd=sc&&sc.scrollTop+sc.clientHeight>=sc.scrollHeight-6;
+  if(isPhone()){const vv=window.visualViewport,vH=Math.round(vv?vv.height:innerHeight),top=vv?Math.max(0,vv.offsetTop):0,vw=vv?vv.width:innerWidth,k=vw/W,fh=Math.round(vH/k);
+    st.style.top=top+'px';st.style.height=vH+'px';st.style.bottom='auto';
+    fr.style.height=fh+'px';fr.classList.add('full');st.classList.add('full');w.style.width=vw+'px';w.style.height=vH+'px';fr.style.transform=`scale(${k})`}
+  else{st.style.top='';st.style.height='';st.style.bottom='';const k=Math.min(innerWidth/W,vh()/H,1.3);fr.style.height=H+'px';fr.classList.remove('full');st.classList.remove('full');w.style.width=W*k+'px';w.style.height=H*k+'px';fr.style.transform=`scale(${k})`}
+  if(sc&&atEnd)sc.scrollTop=sc.scrollHeight;}
+if(window.visualViewport){visualViewport.addEventListener('resize',fit);visualViewport.addEventListener('scroll',fit)}
+document.addEventListener('focusin',e=>{if(fr&&e.target.closest&&e.target.closest('.frame')){[60,250,500].forEach(t=>setTimeout(fit,t))}});
+document.addEventListener('focusout',()=>{if(fr)[60,250,500].forEach(t=>setTimeout(()=>{fit();window.scrollTo(0,0)},t))});
 document.addEventListener('fullscreenchange',fit);document.addEventListener('webkitfullscreenchange',fit);
 function goFull(){const el=document.documentElement;try{const f=el.requestFullscreen||el.webkitRequestFullscreen;if(f){const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}}catch(e){}}
 function exitFull(){try{const d=document;if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d)}}catch(e){}}
