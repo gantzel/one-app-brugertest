@@ -65,7 +65,7 @@ label{display:grid;gap:6px;font-size:14px;font-weight:500}
 .frame.full .dock{padding-bottom:max(12px,env(safe-area-inset-bottom))}
 .corner{position:absolute;left:0;top:0;width:60px;height:60px;z-index:30}
 .frame.full~.corner,.stage.full .corner{top:env(safe-area-inset-top);width:72px;height:72px}
-.toast{position:absolute;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(0,0,0,.84);color:#fff;font-size:14px;padding:10px 16px;border-radius:12px;z-index:40;max-width:340px;text-align:center;transition:opacity .4s}
+.toast{pointer-events:none;position:absolute;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(0,0,0,.84);color:#fff;font-size:14px;padding:10px 16px;border-radius:12px;z-index:40;max-width:340px;text-align:center;transition:opacity .4s}
 .panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:16px}
 .pbox{background:var(--card);color:var(--ink);border-radius:20px;padding:24px;width:min(400px,100%);display:grid;gap:14px}
 .pbox h2{font-size:22px;font-weight:500}
@@ -78,6 +78,12 @@ label{display:grid;gap:6px;font-size:14px;font-weight:500}
 .pc{padding:266px 20px 140px}
 .logo{display:block;margin-bottom:24px}
 .frame h1{font-weight:500;font-size:32px;line-height:1.03;letter-spacing:-.5px}
+.phl{width:37px;height:36px;margin-bottom:24px}.phh{visibility:hidden}
+.hdr{position:absolute;left:0;right:0;top:0;height:0;z-index:5;pointer-events:none}
+.hbar{position:absolute;left:0;right:0;top:0;height:56px;background:#fff;opacity:0}
+.hlogo{position:absolute;left:0;top:0;width:37px;height:36px;transform-origin:0 0;pointer-events:auto;will-change:transform}
+.htitle{position:absolute;left:0;top:0;margin:0;white-space:nowrap;transform-origin:0 0;pointer-events:auto;will-change:transform}
+.frame.long .hdr{z-index:1}
 .sub{margin-top:24px;font-size:20px;line-height:1.1}
 .sub .m{color:rgba(0,0,0,.56)}.b{font-weight:500}
 .turn{margin-top:40px}
@@ -250,7 +256,7 @@ function chipsHTML(turns){
   return '';
 }
 function frameHTML(turns,cls){
-  return `<div class="frame ${cls||''}"><div class="scroll"><div class="pc"><section>${LOGO}<h1 data-t="Overskrift" data-dead>Alt kører, Sigurd</h1><p class="sub" data-t="Regningstekst" data-dead><span class="m">Din næste regning er</span> <span class="b">249 kr.</span><br><span class="m">og trækkes</span> <span class="b">1. december 2026.</span><br><br><span class="m">Regningen er højere end de seneste<br>3 måneder.</span></p></section><div class="convo" aria-live="polite">${convoHTML(turns,false)}</div></div></div><div class="fixl">Fast bund – ligger altid nederst på skærmen, uanset hvor man har scrollet hen</div><div class="dock"><div class="dk">${chipsHTML(turns)}</div><form class="comp" data-t="Tekstfelt-ramme" data-dead><span class="ic" data-t="Plus-ikon" data-dead>${I_PLUS}</span><input aria-label="Skriv et spørgsmål" autocomplete="off" placeholder="Spørg om hvad som helst..." data-t="Tekstfelt"><button type="button" class="ic mic" aria-label="Åbn tastaturet for indtaling" data-t="Mikrofon">${I_MIC}</button><button type="submit" class="ic send" aria-label="Send spørgsmål" data-t="Send">${I_ARR}</button></form></div></div>`;
+  return `<div class="frame ${cls||''}"><div class="scroll"><div class="pc"><section><div class="phl" aria-hidden="true"></div><h1 class="phh" aria-hidden="true">Alt kører, Sigurd</h1><p class="sub" data-t="Regningstekst" data-dead><span class="m">Din næste regning er</span> <span class="b">249 kr.</span><br><span class="m">og trækkes</span> <span class="b">1. december 2026.</span><br><br><span class="m">Regningen er højere end de seneste<br>3 måneder.</span></p></section><div class="convo" aria-live="polite">${convoHTML(turns,false)}</div></div></div><div class="hdr"><div class="hbar" data-t="Fast top" data-dead></div>${LOGO.replace('class="logo"','class="hlogo" data-hdr style="transform:translate(20px,266px)"')}<h1 class="htitle" data-t="Overskrift" data-dead data-hdr style="transform:translate(20px,326px)">Alt kører, Sigurd</h1></div><div class="fixl">Fast bund – ligger altid nederst på skærmen, uanset hvor man har scrollet hen</div><div class="dock"><div class="dk">${chipsHTML(turns)}</div><form class="comp" data-t="Tekstfelt-ramme" data-dead><span class="ic" data-t="Plus-ikon" data-dead>${I_PLUS}</span><input aria-label="Skriv et spørgsmål" autocomplete="off" placeholder="Spørg om hvad som helst..." data-t="Tekstfelt"><button type="button" class="ic mic" aria-label="Åbn tastaturet for indtaling" data-t="Mikrofon">${I_MIC}</button><button type="submit" class="ic send" aria-label="Send spørgsmål" data-t="Send">${I_ARR}</button></form></div></div>`;
 }
 
 /* ---------- storage ---------- */
@@ -310,10 +316,21 @@ $('#startForm').addEventListener('submit',e=>{
   goFull();persist(cur);startProto();show('test');
   const t=$('#toast');t.style.opacity=1;setTimeout(()=>t.style.opacity=0,3500);
 });
+// state1 -> state2: logo 37x36 -> 25x24, title 32px -> 20px beside the logo (gap 12) in a white bar
+const HB=56,PY=16,LY0=266,TY0=326,S0=170,S1=250;
+function hdrApply(f,st){
+  const p=Math.max(0,Math.min(1,(st-S0)/(S1-S0)));
+  const lY=(LY0-st)*(1-p)+PY*p,lS=1+(25/37-1)*p;
+  const tY=(TY0-st)*(1-p)+(PY+(24-20*1.03)/2)*p,tX=20+(25+12)*p,tS=1+(20/32-1)*p;
+  const l=f.querySelector('.hlogo'),t=f.querySelector('.htitle'),b=f.querySelector('.hbar');
+  l.style.transform=`translate(20px,${lY}px) scale(${lS})`;t.style.transform=`translate(${tX}px,${tY}px) scale(${tS})`;
+  b.style.opacity=p;b.style.pointerEvents=p>.5?'auto':'none';
+}
 function startProto(){
   turns=[];timers.forEach(clearTimeout);timers=[];
   const w=$('#fwrap');w.innerHTML=frameHTML([],'')+'<div class="corner" aria-hidden="true"></div>';
   fr=w.querySelector('.frame');fit();
+  {const sc=fr.querySelector('.scroll'),f=fr;let q=0;sc.addEventListener('scroll',()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;hdrApply(f,sc.scrollTop)})},{passive:true});hdrApply(f,0)}
   fr.addEventListener('pointerdown',rec,true);
   fr.addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(b)ask(b.dataset.ask,'forslag');if(e.target.closest('.mic'))fr.querySelector('input').focus()});
   fr.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const i=fr.querySelector('input');const v=i.value;i.value='';ask(v,'skrevet')});
@@ -340,8 +357,9 @@ function rec(e){
   if(!cur||$('#panel').classList.contains('hide')===false)return;
   const r=fr.getBoundingClientRect(),k=r.width/W;
   const x=Math.round((e.clientX-r.left)/k*10)/10,y=Math.round((e.clientY-r.top)/k*10)/10;
-  const el=e.target.closest('[data-t]');
-  log({ty:'c',x,y,s:screenOf(turns),el:el?el.dataset.t:'Tomt område',d:!el||el.hasAttribute('data-dead')?1:0,sy:Math.round(fr.querySelector('.scroll').scrollTop),dt:Math.round((fr.querySelector('.dock').getBoundingClientRect().top-r.top)/k*10)/10});
+  const el=e.target.closest('[data-t]');let hx,hy;
+  if(el&&el.hasAttribute('data-hdr')){const b=el.getBoundingClientRect();hx=Math.round((e.clientX-b.left)/b.width*100)/100;hy=Math.round((e.clientY-b.top)/b.height*100)/100}
+  log({ty:'c',x,y,hx,hy,s:screenOf(turns),el:el?el.dataset.t:'Tomt område',d:!el||el.hasAttribute('data-dead')?1:0,sy:Math.round(fr.querySelector('.scroll').scrollTop),dt:Math.round((fr.querySelector('.dock').getBoundingClientRect().top-r.top)/k*10)/10});
 }
 function ask(q,src){
   const c=String(q).trim();if(!c)return;
@@ -404,6 +422,7 @@ function renderRes(){
   const cm=measure(ex,'long');
   const smap=new Map(ss.map(x=>[x.id,x]));let old=0;
   const pts=[];sel.forEach(c=>{const p=place(c,smap.get(c.sid));if(p.reg==='old'){old++;return}
+    if(p.reg==='hel'){const bx=p.el==='Logo'?{x:20,y:LY0,w:37,h:36}:{x:20,y:TY0,w:cm.tw,h:33};pts.push({x:bx.x+p.hx*bx.w,y:bx.y+p.hy*bx.h,p:c.p});return}
     const y=p.reg==='dock'?cm.dockTop+p.ry:p.reg==='turn'?(cm.tops[0]??0)+p.ry:p.ry;pts.push({x:+c.x,y,p:c.p})});
   const on=$('#oldNote');if(on)on.textContent=old?`${old} klik lå i et tidligere svar længere oppe i samtalen og er ikke med på kortet.`:'';
   if(phoneRO)phoneRO.disconnect();
@@ -417,7 +436,7 @@ function measure(turns,cls){
   const key=cls+JSON.stringify(turns.map(t=>[t.k,t.q,t.v?1:0]));if(mcache.has(key))return mcache.get(key);
   meas.innerHTML=frameHTML(turns,'static '+cls);const f=meas.firstChild,pc=f.querySelector('.pc'),top=pc.getBoundingClientRect().top;
   const m={tops:[...pc.querySelectorAll('.turn')].map(e=>e.getBoundingClientRect().top-top),dockH:f.querySelector('.dock').offsetHeight,dockTop:f.querySelector('.dock').getBoundingClientRect().top-f.getBoundingClientRect().top,fh:f.offsetHeight};
-  mcache.set(key,m);return m;
+  m.tw=f.querySelector('.htitle').offsetWidth||230;mcache.set(key,m);return m;
 }
 // rebuild the conversation exactly as it looked when the click happened
 function turnsAt(sess,t){
@@ -426,6 +445,8 @@ function turnsAt(sess,t){
 }
 // region: dock (fixed bottom), hero (top text), turn (the latest answer or one just like it), old (an earlier, different answer)
 function place(c,sess){
+  if(c.hx!==undefined&&c.hx!==null&&Number.isFinite(+c.hx))return{reg:'hel',hx:+c.hx,hy:+c.hy,el:c.el};
+  if(c.el==='Fast top')return{reg:'top',ry:+c.y};
   const tu=turnsAt(sess,+c.t||0),m=measure(tu,'');const dTop=Number.isFinite(+c.dt)&&c.dt!==undefined?+c.dt:H-m.dockH,y=+c.y;
   if(y>=dTop)return{reg:'dock',ry:y-dTop};
   const dy=y+(+c.sy||0);
