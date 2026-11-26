@@ -236,7 +236,7 @@ const I_MIC='<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
 const I_ARR='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m11.25 4.41-1.18 1.18 3.58 3.58H3.16v1.66h10.49l-3.58 3.58 1.18 1.18L16.84 10l-5.59-5.59Z" fill="#323232"/></svg>';
 const LOGO='<svg class="logo" data-t="Logo" data-dead width="37" height="36" viewBox="0 0 37 36" aria-hidden="true"><path d="M12.19 2C7.64 2 4.87 4.36 4.08 9.01L1.18 25.64C.26 30.94 2.84 34 8.06 34h15.76c4.57 0 7.31-2.36 8.12-7.01l2.88-16.63C35.74 5.06 33.16 2 27.94 2H12.19Z" fill="#00DC00"/></svg>';
 // Test-varianter: sæt ready:true og en prototype ind, når test B er bygget
-const TESTS=[{id:'a',name:'Test A',desc:'Regningsassistent',ready:true},{id:'b',name:'Test B',desc:'Ikke bygget endnu',ready:false}];
+const TESTS=[{id:'a',name:'Conversational',desc:'',ready:true},{id:'b',name:'Personalisation',desc:'Ikke bygget endnu',ready:false}];
 const tvOf=s=>(s&&s.tv)||'a';const tName=id=>(TESTS.find(t=>t.id===id)||{name:id}).name;
 const SUGG=['Forklar regning','Se forbrug','Ændre betalingsmetode'];
 const SCREENS={start:'Start',venter:'Venter på svar',regning:'Svar: regning',forbrug:'Svar: forbrug',betaling:'Svar: betaling',andet:'Svar: eget spørgsmål'};
@@ -306,15 +306,16 @@ let view='home';
 function show(v){view=v;document.documentElement.classList.toggle('testing',v==='test');$('#vHome').classList.toggle('hide',v!=='home');$('#vRes').classList.toggle('hide',v!=='res');$('#vTest').classList.toggle('hide',v!=='test');if(v==='res')renderRes();if(v==='home')homeInfo();window.scrollTo(0,0)}
 function route(){if(view==='test')return;show(location.hash==='#resultater'?'res':'home')}
 window.addEventListener('hashchange',route);
-let tChoice='auto';
+let tChoice='a';
 function counts(){const c={};TESTS.forEach(t=>c[t.id]=0);allSessions().forEach(s=>{const k=tvOf(s);if(k in c)c[k]++});return c}
 function pickTest(){const ready=TESTS.filter(t=>t.ready);if(!ready.length)return null;
   if(tChoice!=='auto'){const t=TESTS.find(x=>x.id===tChoice);return t&&t.ready?t.id:ready[0].id}
   const c=counts();const min=Math.min(...ready.map(t=>c[t.id]));const lo=ready.filter(t=>c[t.id]===min);return lo[Math.floor(Math.random()*lo.length)].id}
 function tSeg(){const c=counts();
-  $('#tSeg').innerHTML=[['auto','Fordel automatisk',true],...TESTS.map(t=>[t.id,`${t.name} · ${t.desc}`,t.ready])].map(([k,l,ok])=>`<button type="button" data-tc="${k}" aria-pressed="${tChoice===k}" ${ok?'':'disabled'}>${esc(l)}</button>`).join('');
+  if(!TESTS.some(t=>t.id===tChoice&&t.ready))tChoice=(TESTS.find(t=>t.ready)||{}).id;
+  $('#tSeg').innerHTML=TESTS.map(t=>[t.id,t.desc?`${t.name} · ${t.desc}`:t.name,t.ready]).map(([k,l,ok])=>`<button type="button" data-tc="${k}" aria-pressed="${tChoice===k}" ${ok?'':'disabled'}>${esc(l)}</button>`).join('');
   const ready=TESTS.filter(t=>t.ready).length;
-  $('#tDist').textContent=(tChoice==='auto'?(ready>1?'Næste deltager får den test, der har færrest sessioner. ':'Kun Test A er klar, så alle får Test A indtil videre. '):'')+'Fordeling indtil nu: '+TESTS.map(t=>`${t.name} ${c[t.id]}`).join(' · ');}
+  $('#tDist').textContent='Fordeling indtil nu: '+TESTS.map(t=>`${t.name} ${c[t.id]}`).join(' · ');}
 $('#tSeg').addEventListener('click',e=>{const b=e.target.closest('[data-tc]');if(!b||b.disabled)return;tChoice=b.dataset.tc;tSeg()});
 function homeInfo(){tSeg();
   const n=allSessions().length;
@@ -488,7 +489,7 @@ function renderCmp(all){
     return{t,n,v:[n,n?fmtT(med(dur)):'–',n?(tot/n).toFixed(1).replace('.',','):'–',tot?Math.round(dead/tot*100)+' %':'–',first.length?fmtT(med(first)):'–',n?own:'–']}});
   const H=['Sessioner','Varighed (median)','Klik pr. session','Klik uden funktion','Tid til første klik (median)','Spørgsmål skrevet selv'];
   $('#kpis').innerHTML='';
-  $('#resBody').innerHTML=`<div class="box"><h2 class="h">Test A og Test B side om side</h2><div style="overflow-x:auto"><table class="cmp"><thead><tr><th></th>${rows.map(r=>`<th>${esc(r.t.name)}<br><span class="mut" style="font-weight:400">${esc(r.t.desc)}</span></th>`).join('')}</tr></thead><tbody>${H.map((h,i)=>`<tr><td>${h}</td>${rows.map(r=>`<td class="num">${esc(r.v[i])}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="note mut">Heatmaps vises under hver test for sig, fordi de to apps er bygget forskelligt. Med få deltagere pr. test er tallene en pejling, ikke et bevis.</p></div>`;
+  $('#resBody').innerHTML=`<div class="box"><h2 class="h">Conversational og Personalisation side om side</h2><div style="overflow-x:auto"><table class="cmp"><thead><tr><th></th>${rows.map(r=>`<th>${esc(r.t.name)}${r.t.desc?`<br><span class="mut" style="font-weight:400">${esc(r.t.desc)}</span>`:''}</th>`).join('')}</tr></thead><tbody>${H.map((h,i)=>`<tr><td>${h}</td>${rows.map(r=>`<td class="num">${esc(r.v[i])}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="note mut">Heatmaps vises under hver test for sig, fordi de to apps er bygget forskelligt. Med få deltagere pr. test er tallene en pejling, ikke et bevis.</p></div>`;
 }
 function draw(cv,pts,pc,Hh){
   const H=Hh;cv.style.height=H+'px';
