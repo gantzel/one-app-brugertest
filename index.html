@@ -218,7 +218,6 @@ textarea.csv{width:100%;height:160px;margin-top:10px;font:12px/1.4 ui-monospace,
     <div class="pbox">
       <h2 id="pT">Facilitator</h2>
       <p class="mut" id="pInfo"></p>
-      <label>Opgave<input class="field" id="pO" autocomplete="off" placeholder="Ingen opgave"></label>
       <div class="prow"><button class="btn pri" id="pGo" type="button">Fortsæt test</button><button class="btn" id="pReset" type="button">Nulstil prototype</button></div>
       <button class="btn" id="pEnd" type="button">Afslut og gem</button>
     </div>
@@ -396,10 +395,10 @@ function paint(){
 }
 function openPanel(){
   if(!cur)return;const n=cur.ev.filter(e=>e.ty==='c').length,m=Math.round((Date.now()-cur.st)/60000);
-  $('#pInfo').textContent=`${cur.p} · ${tName(cur.tv)} · ${n} klik · ${m} min`;$('#pO').value=cur.o||'';
+  $('#pInfo').textContent=`${cur.p} · ${tName(cur.tv)} · ${n} klik · ${m} min`;
   $('#panel').classList.remove('hide');$('#pGo').focus();
 }
-function closePanel(){const v=$('#pO').value.trim();if(cur&&v!==(cur.o||'')){cur.o=v;log({ty:'o',tx:v})}$('#panel').classList.add('hide')}
+function closePanel(){$('#panel').classList.add('hide')}
 $('#pGo').onclick=closePanel;
 $('#pReset').onclick=()=>{closePanel();log({ty:'r'});startProto()};
 $('#pEnd').onclick=()=>{exitFull();closePanel();timers.forEach(clearTimeout);timers=[];cur.en=Date.now();persist(cur);const n=cur.ev.filter(e=>e.ty==='c').length;$('#saved').textContent=`Gemt: ${cur.p} – ${n} klik.`;cur=null;fr=null;$('#fwrap').innerHTML='';$('#fP').value='';location.hash='';show('home')};
