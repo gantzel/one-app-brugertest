@@ -185,7 +185,6 @@ textarea.csv{width:100%;height:160px;margin-top:10px;font:12px/1.4 ui-monospace,
       <form class="form" id="startForm">
         <label>Deltager<input class="field" id="fP" autocomplete="off" required></label>
         <fieldset class="tch"><legend>Test</legend><div class="seg" id="tSeg"></div><p class="hide" id="tDist"></p></fieldset>
-        <label>Opgave<input class="field" id="fO" autocomplete="off" placeholder="Fx: Find ud af hvorfor regningen er højere"></label>
         <div class="prow"><button class="btn pri" type="submit">Start test</button><a class="btn" href="#resultater" style="display:inline-flex;align-items:center;text-decoration:none" id="toRes">Se resultater</a></div>
         <p id="saved" class="mut" style="font-size:14px"></p>
         <div class="box" id="shareBox" style="margin:8px 0 0;padding:14px 16px"><p style="font-size:14px"><b style="font-weight:500">Data på denne enhed:</b> <span id="localN">0 sessioner</span></p><p class="mut" style="font-size:13px;margin:4px 0 10px">Brug knappen for at flytte klikkene til resultatsiden på din computer.</p><button class="btn sm" type="button" id="shareBtn">Del data fra denne enhed</button><textarea class="csv hide" id="shareTa" readonly aria-label="Data til kopiering"></textarea></div>
@@ -333,7 +332,7 @@ $('#startForm').addEventListener('submit',e=>{
   e.preventDefault();
   const p=$('#fP').value.trim()||'Deltager';
   const tv=pickTest();if(!tv)return;
-  cur={id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),p,tv,o:$('#fO').value.trim(),st:Date.now(),en:0,vw:[innerWidth,innerHeight],ev:[]};
+  cur={id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),p,tv,o:'',st:Date.now(),en:0,vw:[innerWidth,innerHeight],ev:[]};
   goFull();persist(cur);startProto();show('test');
   const t=$('#toast');t.style.opacity=1;setTimeout(()=>t.style.opacity=0,3500);
 });
@@ -403,7 +402,7 @@ function openPanel(){
 function closePanel(){const v=$('#pO').value.trim();if(cur&&v!==(cur.o||'')){cur.o=v;log({ty:'o',tx:v})}$('#panel').classList.add('hide')}
 $('#pGo').onclick=closePanel;
 $('#pReset').onclick=()=>{closePanel();log({ty:'r'});startProto()};
-$('#pEnd').onclick=()=>{exitFull();closePanel();timers.forEach(clearTimeout);timers=[];cur.en=Date.now();persist(cur);const n=cur.ev.filter(e=>e.ty==='c').length;$('#saved').textContent=`Gemt: ${cur.p} – ${n} klik.`;cur=null;fr=null;$('#fwrap').innerHTML='';$('#fP').value='';$('#fO').value='';location.hash='';show('home')};
+$('#pEnd').onclick=()=>{exitFull();closePanel();timers.forEach(clearTimeout);timers=[];cur.en=Date.now();persist(cur);const n=cur.ev.filter(e=>e.ty==='c').length;$('#saved').textContent=`Gemt: ${cur.p} – ${n} klik.`;cur=null;fr=null;$('#fwrap').innerHTML='';$('#fP').value='';location.hash='';show('home')};
 document.addEventListener('keydown',e=>{if(view!=='test')return;if(e.key==='Escape'){$('#panel').classList.contains('hide')?openPanel():closePanel()}});
 
 /* ---------- results ---------- */
