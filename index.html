@@ -534,6 +534,15 @@ $('#impGo').addEventListener('click',async()=>{
   saveLocal();m.textContent=n?`${n} ${n===1?'session':'sessioner'} importeret.`:'Ingen sessioner fundet.';$('#impTa').value='';renderRes();homeInfo();
 });
 if(standalone)document.documentElement.classList.add('app');
+// Auto-opdatering: tjek om der ligger en nyere version, når appen åbnes eller vender tilbage
+const BUILD='20261127085825';
+async function checkUpdate(){
+  if(view==='test'||!/^https?:/.test(location.protocol))return;
+  try{const t=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'');const m=t.match(/const BUILD='([^']+)'/);
+    if(m&&m[1]!==BUILD&&m[1]!=='__BUILD__'){location.replace(location.pathname+'?v='+m[1]+location.hash)}}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
+setTimeout(checkUpdate,800);
 setStatus();route();
 }
 </script>
